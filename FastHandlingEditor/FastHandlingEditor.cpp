@@ -20,16 +20,7 @@ void handle_eptr(std::exception_ptr eptr) // passing by value is ok
 	}
 }
 
-// killatomate's things to lower top speed
-//  ORDER IS IMPORTANT
-//  fInitialDragCoeff = (fInitialDragCoeff * 2) + (fInitialDriveForce * 13)
-//	fDriveInertia = (fDriveInertia * 0.2) + 0.8
-//	fInitialDriveMaxFlatVel = (fInitialDriveMaxFlatVel * 0.62) + 45
-//	fLowSpeedTractionLossMult = fLowSpeedTractionLossMult * 1.4
-//	fTractionBiasFront = fTractionBiasFront + ((0.5 - fTractionBiasFront) * 0.14)
-//	fSuspensionForce = fSuspensionForce * 0.89
-//  fInitialDriveForce = fInitialDriveForce + ((0.7 - fInitialDriveForce) * 0.015)
-void changeParams(tinyxml2::XMLElement *elem) {
+void changeParamsCars(tinyxml2::XMLElement *elem) {
 	float fInitialDragCoeff;
 	float fDriveInertia;
 	float fInitialDriveMaxFlatVel;
@@ -46,13 +37,13 @@ void changeParams(tinyxml2::XMLElement *elem) {
 	elem->FirstChildElement("fSuspensionForce")->QueryAttribute("value", &fSuspensionForce);
 	elem->FirstChildElement("fInitialDriveForce")->QueryAttribute("value", &fInitialDriveForce);
 
-	fInitialDragCoeff = (fInitialDragCoeff * 2) + (fInitialDriveForce * 13)		   ;
-	fDriveInertia = (fDriveInertia * 0.2) + 0.8									   ;
-	fInitialDriveMaxFlatVel = (fInitialDriveMaxFlatVel * 0.62) + 45				   ;
-	fLowSpeedTractionLossMult = fLowSpeedTractionLossMult * 1.4					   ;
-	fTractionBiasFront = fTractionBiasFront + ((0.5 - fTractionBiasFront) * 0.14)  ;
-	fSuspensionForce = fSuspensionForce * 0.89									   ;
-	fInitialDriveForce = fInitialDriveForce + ((0.7 - fInitialDriveForce) * 0.015) ;
+	fInitialDragCoeff = (fInitialDragCoeff * 1.3) + (fInitialDriveForce * 15)		;
+	fDriveInertia = (fDriveInertia * 0.2) + 0.8										;
+	fInitialDriveMaxFlatVel = (fInitialDriveMaxFlatVel * 0.60) + 48					;
+	fLowSpeedTractionLossMult = fLowSpeedTractionLossMult * 1.4						;
+	fTractionBiasFront = fTractionBiasFront + ((0.5 - fTractionBiasFront) * 0.014)	;
+	fSuspensionForce = fSuspensionForce * 0.93										;
+	fInitialDriveForce = fInitialDriveForce + ((0.65 - fInitialDriveForce) * 0.028)	;
 
 	elem->FirstChildElement("fInitialDragCoeff")->SetAttribute("value", fInitialDragCoeff);
 	elem->FirstChildElement("fDriveInertia")->SetAttribute("value", fDriveInertia);
@@ -63,11 +54,35 @@ void changeParams(tinyxml2::XMLElement *elem) {
 	elem->FirstChildElement("fInitialDriveForce")->SetAttribute("value", fInitialDriveForce);
 }
 
+void changeParamsBike(tinyxml2::XMLElement *elem) {
+	float fInitialDragCoeff;
+	float fInitialDriveMaxFlatVel;
+	float fBrakeBiasFront;
+	float fInitialDriveForce;
+
+	elem->FirstChildElement("fInitialDragCoeff")->QueryAttribute("value", &fInitialDragCoeff);
+	elem->FirstChildElement("fInitialDriveMaxFlatVel")->QueryAttribute("value", &fInitialDriveMaxFlatVel);
+	elem->FirstChildElement("fBrakeBiasFront")->QueryAttribute("value", &fBrakeBiasFront);
+	elem->FirstChildElement("fInitialDriveForce")->QueryAttribute("value", &fInitialDriveForce);
+
+	fInitialDragCoeff = (fInitialDragCoeff * 0.9) + (fInitialDriveForce * 8) - 0.9 ; 
+	fInitialDriveMaxFlatVel = (fInitialDriveMaxFlatVel * 0.60) + 53				   ; 
+	fBrakeBiasFront = fBrakeBiasFront - 0.02									   ; 
+	fInitialDriveForce = fInitialDriveForce * 0.89								   ; 
+
+	elem->FirstChildElement("fInitialDragCoeff")->SetAttribute("value", fInitialDragCoeff);
+	elem->FirstChildElement("fInitialDriveMaxFlatVel")->SetAttribute("value", fInitialDriveMaxFlatVel);
+	elem->FirstChildElement("fBrakeBiasFront")->SetAttribute("value", fBrakeBiasFront);
+	elem->FirstChildElement("fInitialDriveForce")->SetAttribute("value", fInitialDriveForce);
+}
+
 int main(int argc, char *argv[])
 {
 	std::string vehiclesFilePath;
 	std::vector<std::string> vehicles;
 	std::vector<std::string> processed;
+
+	bool isBikes = false;
 
 	std::string handlingFilePath;
 	tinyxml2::XMLDocument doc;
@@ -77,7 +92,8 @@ int main(int argc, char *argv[])
 	desc.add_options()
 		("help"    , "Show this help")
 		("handling,h", po::value<std::string>(), "handling.meta file")
-		("list,l"    , po::value<std::string>(), "Vehicle list");
+		("list,l"    , po::value<std::string>(), "Vehicle list")
+		("bike,b"    , po::value<bool>(), "Set to \"true\" to indicate list is bikes");
 	po::variables_map vm;
 	try {
 		po::store(po::parse_command_line(argc, argv, desc), vm);
@@ -100,6 +116,13 @@ int main(int argc, char *argv[])
 		} else {
 			std::cout << "No vehicle list specified\n";
 			return 1;
+		}
+
+		if (vm.count("bike")) {
+			isBikes = vm["bike"].as<bool>();
+			std::cout << "Using " << (isBikes ? "bike" : "car") << " rules\n";
+		} else {
+			std::cout << "No --bike option, using car rules\n";
 		}
 	}
 	catch (...) {
@@ -138,8 +161,10 @@ int main(int argc, char *argv[])
 			if (boost::iequals(v, currName)) {
 				processed.push_back(v);
 				//std::cout << currName << "\n";
-				changeParams(e);
-				//TODO: Your shit here
+				if (isBikes)
+					changeParamsBike(e);
+				else
+					changeParamsCars(e);
 			}
 		}
 	}
@@ -160,16 +185,6 @@ int main(int argc, char *argv[])
 
 	
 	doc.SaveFile("result.xml");
-
-	//float fMass;
-	//tinyxml2::XMLElement *pElem = pRoot->FirstChildElement("Item")->FirstChildElement("fMass");
-	//pElem->QueryAttribute("value", &fMass);
-	//std::cout << fMass << "\n";
-
-
-
-	/*for (auto v : vehicles)
-		std::cout << v << "\n";*/
     return 0;
 }
 
