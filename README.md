@@ -6,7 +6,7 @@ A quick tool to assist killatomate in his handling.meta development.
 Run in terminal:
 ```
 HandlingParamModifier.exe --help
-HandlingParamModifier.exe -h <handling.meta file> -l <vehicle list file> [-b <bike?>]
+HandlingParamModifier.exe -h <handling.meta file> -l <vehicle list file>
 ```
 
 * ```-h``` - a valid handling.meta as  input
