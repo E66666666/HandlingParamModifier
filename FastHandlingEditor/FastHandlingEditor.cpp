@@ -79,10 +79,11 @@ void changeParamsBike(tinyxml2::XMLElement *elem) {
 int main(int argc, char *argv[])
 {
 	std::string vehiclesFilePath;
-	std::vector<std::string> vehicles;
-	std::vector<std::string> processed;
+	std::vector<std::string> cars;
+	std::vector<std::string> bikes;
 
-	bool isBikes = false;
+	std::vector<std::string> processedCars;
+	std::vector<std::string> processedBikes;
 
 	std::string handlingFilePath;
 	tinyxml2::XMLDocument doc;
@@ -90,10 +91,9 @@ int main(int argc, char *argv[])
 	std::exception_ptr eptr;
 	po::options_description desc("handling.meta parameter util");
 	desc.add_options()
-		("help"    , "Show this help")
+		("help", "Show this help")
 		("handling,h", po::value<std::string>(), "handling.meta file")
-		("list,l"    , po::value<std::string>(), "Vehicle list")
-		("bike,b"    , po::value<bool>(), "Set to \"true\" to indicate list is bikes");
+		("list,l", po::value<std::string>(), "Vehicle list");
 	po::variables_map vm;
 	try {
 		po::store(po::parse_command_line(argc, argv, desc), vm);
@@ -118,12 +118,6 @@ int main(int argc, char *argv[])
 			return 1;
 		}
 
-		if (vm.count("bike")) {
-			isBikes = vm["bike"].as<bool>();
-			std::cout << "Using " << (isBikes ? "bike" : "car") << " rules\n";
-		} else {
-			std::cout << "No --bike option, using car rules\n";
-		}
 	}
 	catch (...) {
 		eptr = std::current_exception();
@@ -135,8 +129,15 @@ int main(int argc, char *argv[])
 	if (vehiclesFile.is_open()) {
 		std::string str;
 		while (std::getline(vehiclesFile, str)) {
-			if (str != "")
-				vehicles.push_back(str);
+			if (str != "") {
+				auto pos = str.find_last_of(" B");
+				if (pos != std::string::npos) {
+					bikes.push_back(str.substr(0, pos-1));
+					//std::cout << str.substr(0, pos);
+				} else {
+					cars.push_back(str);
+				}
+			}
 		}
 	}
 
@@ -157,34 +158,50 @@ int main(int argc, char *argv[])
 	for (auto e = pRoot->FirstChildElement("Item"); e != nullptr; e = e->NextSiblingElement("Item")) {
 		std::string currName = e->FirstChildElement("handlingName")->GetText();
 		//std::cout << e->FirstChildElement("handlingName")->GetText() << "\n";
-		for (auto v : vehicles) {
+		for (auto v : cars) {
 			if (boost::iequals(v, currName)) {
-				processed.push_back(v);
-				//std::cout << currName << "\n";
-				if (isBikes)
-					changeParamsBike(e);
-				else
-					changeParamsCars(e);
+				processedCars.push_back(v);
+				changeParamsCars(e);
+			}
+		}
+		for (auto b : bikes) {
+			if (boost::iequals(b, currName)) {
+				processedBikes.push_back(b);
+				changeParamsCars(e);
 			}
 		}
 	}
 
-	if (processed.size() != vehicles.size()) {
-		std::sort(vehicles.begin(), vehicles.end());
-		std::sort(processed.begin(), processed.end());
+	if (processedCars.size() != cars.size()) {
+		std::sort(cars.begin(), cars.end());
+		std::sort(processedCars.begin(), processedCars.end());
 		std::vector<std::string> missing;
 		std::set_difference(
-			vehicles.begin(), vehicles.end(), 
-			processed.begin(), processed.end(), std::back_inserter(missing));
+			cars.begin(), cars.end(), 
+			processedCars.begin(), processedCars.end(), std::back_inserter(missing));
 		
-		std::cout << "Following handling line(s) not found: \n";// << "\n"
+		std::cout << "\nFollowing handling line(s) not found: (cars)\n";// << "\n"
 		for (auto m : missing) {
 			std::cout << m << "\n";
 		}
 	}
 
-	
-	doc.SaveFile("result.xml");
+	if (processedBikes.size() != bikes.size()) {
+		std::sort(bikes.begin(), bikes.end());
+		std::sort(processedBikes.begin(), processedBikes.end());
+		std::vector<std::string> missing;
+		std::set_difference(
+			bikes.begin(), bikes.end(),
+			processedBikes.begin(), processedBikes.end(), std::back_inserter(missing));
+
+		std::cout << "\nFollowing handling line(s) not found: (bikes)\n";// << "\n"
+		for (auto m : missing) {
+			std::cout << m << "\n";
+		}
+	}
+
+	doc.SaveFile("result.meta");
+	std::cout << "Saved changes to result.meta\n";
     return 0;
 }
 
