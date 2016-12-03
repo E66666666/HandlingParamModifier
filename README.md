@@ -11,7 +11,6 @@ HandlingParamModifier.exe -h <handling.meta file> -l <vehicle list file> [-b <bi
 
 * ```-h``` - a valid handling.meta as  input
 * ```-l``` - text file, each line has a handling name to edit
-* ```-b``` - is this list for bikes? "true" or "false"
 
 Writes to ```result.xml```.
 
@@ -24,18 +23,22 @@ Valid handling.meta and vehicles.txt are in the same directory as the executable
 vehicles.txt
 ```
 AIRTUG
-BLABLABLA
+INVALIDEXAMPLE
 WASHINGTON
+Hakuchou B
+INVALIDEXAMPLE2 B
 ```
 
 Command prompt output
 ```
 HandlingParamModifier.exe -h handling.meta -l vehicles.txt
-Following handling lines not found:
-BLABLABLA
 
+Following handling line(s) not found: (cars)
+INVALIDEXAMPLE
+
+Following handling line(s) not found: (bikes)
+INVALIDEXAMPLE2
 ```
-
 
 ## Building
 
