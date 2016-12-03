@@ -167,7 +167,7 @@ int main(int argc, char *argv[])
 		for (auto b : bikes) {
 			if (boost::iequals(b, currName)) {
 				processedBikes.push_back(b);
-				changeParamsCars(e);
+				changeParamsBike(e);
 			}
 		}
 	}
