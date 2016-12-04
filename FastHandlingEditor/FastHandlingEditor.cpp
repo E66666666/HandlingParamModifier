@@ -130,9 +130,9 @@ int main(int argc, char *argv[])
 		std::string str;
 		while (std::getline(vehiclesFile, str)) {
 			if (str != "") {
-				auto pos = str.find_last_of(" B");
+				auto pos = str.find("B_");
 				if (pos != std::string::npos) {
-					bikes.push_back(str.substr(0, pos-1));
+					bikes.push_back(str.substr(pos+2, std::string::npos));
 					//std::cout << str.substr(0, pos);
 				} else {
 					cars.push_back(str);

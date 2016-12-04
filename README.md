@@ -25,8 +25,8 @@ vehicles.txt
 AIRTUG
 INVALIDEXAMPLE
 WASHINGTON
-Hakuchou B
-INVALIDEXAMPLE2 B
+B_Hakuchou
+B_INVALIDEXAMPLE2
 ```
 
 Command prompt output
